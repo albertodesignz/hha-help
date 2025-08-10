@@ -45,7 +45,7 @@ body {
 .current-case-info { display: flex; align-items: center; gap: 8px; color: var(--gray-700); }
 .current-case-label { font-weight: 600; color: var(--primary-dark); }
 .current-case-name { font-weight: 600; }
-.case-switch-btn, .case-new-btn { background: linear-gradient(90deg, var(--primary) 0%, var(--secondary-light) 100%); color: white; border: none; padding: 8px 12px; border-radius: var(--border-radius); cursor: pointer; font-size: 0.9rem; margin-left: 8px; box-shadow: 0 2px 6px rgba(118, 75, 162, 0.3); }
+.case-switch-btn, .case-new-btn { background: var(--primary); color: var(--primary-dark); border: none; padding: 8px 12px; border-radius: var(--border-radius); cursor: pointer; font-size: 0.9rem; margin-left: 8px; box-shadow: 0 2px 6px rgba(118, 75, 162, 0.3); }
 .case-switch-btn:hover, .case-new-btn:hover { transform: translateY(-1px); }
 
 .cases-container { border: 1px solid var(--gray-300); border-radius: var(--border-radius); padding: 16px; background: white; margin-top: 12px; }
@@ -89,14 +89,11 @@ body {
     
 #userInfo {
   font-size: 14px;
-  color: var(--gray-600);
-  margin-right: 20px;
+  color: var(--primary-dark);
   display: flex;
   align-items: center;
   padding: 6px 12px;
-  background-color: var(--gray-100);
-  border-radius: var(--border-radius);
-  border: 1px solid var(--gray-300);
+  background-color: transparent;
 }
     
 #userInfo span {
@@ -116,18 +113,18 @@ body {
 }
     
 #userInfo button {
-  background-color: var(--danger);
-  color: white;
+  background-color: transparent;
+  color: var(--primary-dark);
   border: none;
   border-radius: 4px;
   padding: 6px 12px;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 16px;
   transition: var(--transition);
 }
     
 #userInfo button:hover {
-  background-color: #d32f2f;
+  background-color: #acacac;
   transform: translateY(-1px);
 }
     

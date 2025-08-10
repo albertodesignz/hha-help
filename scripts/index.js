@@ -52,7 +52,8 @@ async function checkAuth() {
 
   const userInfo = document.getElementById('userInfo')
   if (userInfo) {
-    if (!document.getElementById('testBadge').style.display || document.getElementById('testBadge').style.display === 'none')
+    const testBadge = document.getElementById('testBadge')
+    if (!testBadge || !testBadge.style.display || testBadge.style.display === 'none')
       document.getElementById('userName').textContent = `Welcome, ${user.user_metadata?.full_name || user.email}`
   }
 
@@ -70,7 +71,10 @@ document.addEventListener('DOMContentLoaded', async function () {
   const testUser = JSON.parse(localStorage.getItem('healthAideTestUser'))
   if (testUser) {
     document.getElementById('userName').textContent = `Welcome, ${testUser.name}!`
-    document.getElementById('testBadge').style.display = 'inline-block'
+    const testBadge = document.getElementById('testBadge')
+    if (testBadge) {
+      testBadge.style.display = 'inline-block'
+    }
   }
 
   // Logout
@@ -158,7 +162,7 @@ document.addEventListener('DOMContentLoaded', async function () {
           <div class="case-actions">
             <button class="case-open-btn" data-id="${cs.id}">Open</button>
             <button class="case-share-btn" data-id="${cs.id}">Share</button>
-            <button class="case-delete-btn" data-id="${cs.id}">Delete</button>
+            <button class="case-delete-btn" data-id="${cs.id}"><i class="ph ph-trash"></i> Delete</button>
           </div>
         `
         casesList.appendChild(card)
@@ -712,15 +716,22 @@ document.addEventListener('DOMContentLoaded', async function () {
   const viewToggleBtn = document.getElementById('view-toggle')
   const mainContainer = document.body
   const viewToggleText = viewToggleBtn.querySelector('.view-toggle-text')
+  const viewToggleIcon = viewToggleBtn.querySelector('.view-toggle-icon i')
   const currentView = localStorage.getItem('view-preference') || 'tabbed'
-  if (currentView === 'list') { mainContainer.classList.add('list-view'); viewToggleText.textContent = 'Tabbed View' }
+  if (currentView === 'list') { 
+    mainContainer.classList.add('list-view'); 
+    viewToggleText.textContent = 'Tabbed View'
+    viewToggleIcon.className = 'ph ph-columns'
+  }
   viewToggleBtn.addEventListener('click', () => {
     mainContainer.classList.toggle('list-view')
     if (mainContainer.classList.contains('list-view')) {
       viewToggleText.textContent = 'Tabbed View'
+      viewToggleIcon.className = 'ph ph-columns'
       localStorage.setItem('view-preference', 'list')
     } else {
       viewToggleText.textContent = 'Simple List'
+      viewToggleIcon.className = 'ph ph-rows'
       localStorage.setItem('view-preference', 'tabbed')
       tabs.forEach(t => t.classList.remove('active'))
       tabContents.forEach(c => c.classList.remove('active'))
