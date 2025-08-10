@@ -110,15 +110,15 @@ document.addEventListener('DOMContentLoaded', async function () {
   const currentCaseBar = document.getElementById('current-case-bar')
   const currentCaseNameEl = document.getElementById('current-case-name')
   const checklistContainer = document.getElementById('checklist-container')
-  const addTaskModal = document.getElementById('add-task-modal')
-  const addTaskModalClose = document.getElementById('add-task-modal-close')
+  const addTaskModalEl = document.getElementById('add-task-modal')
+  const addTaskModal = window.bootstrap ? new bootstrap.Modal(addTaskModalEl) : null
   const addTaskTitleInput = document.getElementById('new-task-title')
   const addTaskSaveBtn = document.getElementById('add-task-save-btn')
   const addTaskCancelBtn = document.getElementById('add-task-cancel-btn')
   let pendingAddCategory = null
 
-  const caseModal = document.getElementById('case-modal')
-  const caseModalClose = document.getElementById('case-modal-close')
+  const caseModalEl = document.getElementById('case-modal')
+  const caseModal = window.bootstrap ? new bootstrap.Modal(caseModalEl) : null
   const caseNameInput = document.getElementById('case-name')
   const patientNameInput = document.getElementById('patient-name')
   const caseSaveBtn = document.getElementById('case-save-btn')
@@ -199,9 +199,9 @@ document.addEventListener('DOMContentLoaded', async function () {
     if (!caseModal) return
     caseNameInput.value = ''
     patientNameInput.value = ''
-    caseModal.classList.add('active')
+    caseModal.show()
   }
-  function closeCaseModal() { if (caseModal) caseModal.classList.remove('active') }
+  function closeCaseModal() { if (caseModal) caseModal.hide() }
   function createCase() {
     const name = (caseNameInput?.value || '').trim()
     const patientName = (patientNameInput?.value || '').trim()
@@ -219,7 +219,6 @@ document.addEventListener('DOMContentLoaded', async function () {
   newCaseBtn?.addEventListener('click', openCaseModal)
   newCaseInlineBtn?.addEventListener('click', openCaseModal)
   switchCaseBtn?.addEventListener('click', () => { showCases(); renderCases() })
-  caseModalClose?.addEventListener('click', closeCaseModal)
   caseCancelBtn?.addEventListener('click', closeCaseModal)
   caseSaveBtn?.addEventListener('click', createCase)
   shareCurrentCaseBtn?.addEventListener('click', async () => {
@@ -235,10 +234,10 @@ document.addEventListener('DOMContentLoaded', async function () {
     pendingAddCategory = categoryId
     if (!addTaskModal) return
     addTaskTitleInput.value = ''
-    addTaskModal.classList.add('active')
+    addTaskModal.show()
     setTimeout(() => addTaskTitleInput?.focus(), 0)
   }
-  function closeAddTaskModal() { addTaskModal?.classList.remove('active'); pendingAddCategory = null }
+  function closeAddTaskModal() { if (addTaskModal) addTaskModal.hide(); pendingAddCategory = null }
   document.querySelectorAll('.add-task-title-btn, .add-task-tab-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation()
@@ -246,7 +245,6 @@ document.addEventListener('DOMContentLoaded', async function () {
       openAddTaskModal(target)
     })
   })
-  addTaskModalClose?.addEventListener('click', closeAddTaskModal)
   addTaskCancelBtn?.addEventListener('click', closeAddTaskModal)
   addTaskSaveBtn?.addEventListener('click', () => {
     const title = (addTaskTitleInput?.value || '').trim()
@@ -649,14 +647,12 @@ document.addEventListener('DOMContentLoaded', async function () {
   if (checklistContainer) checklistContainer.appendChild(clearNotesButton)
 
   // Task Filter Modal
-  const modal = document.getElementById('task-filter-modal')
-  const modalClose = document.querySelector('#task-filter-modal .modal-close')
+  const modalEl = document.getElementById('task-filter-modal')
+  const bootstrapFilterModal = window.bootstrap ? new bootstrap.Modal(modalEl) : null
   const statusItems = document.querySelectorAll('.status-item')
   const filteredTasksList = document.getElementById('filtered-tasks-list')
   const modalStatusType = document.getElementById('modal-status-type')
 
-  modalClose.addEventListener('click', () => modal.classList.remove('active'))
-  window.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('active') })
   statusItems.forEach(item => { item.addEventListener('click', () => showFilteredTasks(item.getAttribute('data-status'))) })
 
   function showFilteredTasks(statusType) {
@@ -705,12 +701,12 @@ document.addEventListener('DOMContentLoaded', async function () {
       filteredTasksList.appendChild(taskElement)
     })
 
-    modal.classList.add('active')
+    bootstrapFilterModal?.show()
   }
 
   // Find Agency link
   const findAgencyLink = document.getElementById('find-agency-link')
-  findAgencyLink.addEventListener('click', () => { document.getElementById('map-modal').classList.add('active') })
+  findAgencyLink.addEventListener('click', () => { const el = document.getElementById('map-modal'); const m = el && window.bootstrap ? new bootstrap.Modal(el) : null; m?.show() })
 
   // View toggle
   const viewToggleBtn = document.getElementById('view-toggle')
@@ -734,13 +730,12 @@ document.addEventListener('DOMContentLoaded', async function () {
   })
 
   // Map modal
-  const mapModal = document.getElementById('map-modal')
-  const mapModalClose = document.querySelector('.map-modal-close')
+  const mapModalEl = document.getElementById('map-modal')
+  const mapModal = mapModalEl && window.bootstrap ? new bootstrap.Modal(mapModalEl) : null
   const zipcodeInput = document.getElementById('zipcode-input')
   const searchMapBtn = document.getElementById('search-map-btn')
   const googleMap = document.getElementById('google-map')
-  mapModalClose.addEventListener('click', () => { mapModal.classList.remove('active') })
-  window.addEventListener('click', (e) => { if (e.target === mapModal) mapModal.classList.remove('active') })
+  // bootstrap handles close via data attributes
   searchMapBtn.addEventListener('click', () => {
     const location = zipcodeInput.value.trim()
     if (!location) return

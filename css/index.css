@@ -429,20 +429,20 @@ h1 {
 .list-view .task p { margin: 8px 0 0 0; color: #666; font-size: 0.9rem; line-height: 1.4; }
 .list-view .checkbox-group, .list-view .notes-section, .list-view .find-agency-link, .list-view .info-icon, .list-view .tooltip { display: none; }
 
-.modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); z-index: 1000; overflow-y: auto; backdrop-filter: blur(3px); transition: all 0.3s ease; }
-.modal.active { display: block; animation: fadeIn 0.3s ease; }
-.modal-content { background-color: white; margin: 8% auto; padding: 30px; border-radius: var(--border-radius); max-width: 600px; width: 90%; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15); position: relative; transform: translateY(20px); opacity: 0; animation: modalSlideIn 0.4s ease forwards; }
+.hha-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); z-index: 1000; overflow-y: auto; backdrop-filter: blur(3px); transition: all 0.3s ease; }
+.hha-modal.active { display: block; animation: fadeIn 0.3s ease; }
+.hha-modal-content { background-color: white; margin: 8% auto; padding: 30px; border-radius: var(--border-radius); max-width: 600px; width: 90%; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15); position: relative; transform: translateY(20px); opacity: 0; animation: modalSlideIn 0.4s ease forwards; }
 @keyframes modalSlideIn { to { transform: translateY(0); opacity: 1; } }
-.modal-close { position: absolute; right: 20px; top: 15px; font-size: 1.8rem; font-weight: 300; cursor: pointer; color: var(--gray-500); transition: var(--transition); width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
-.modal-close:hover { color: var(--danger); background-color: var(--light-danger); }
-.modal-title { margin-top: 0; margin-bottom: 20px; color: var(--primary-dark); font-size: 1.5rem; font-weight: 600; border-bottom: 2px solid var(--gray-200); padding-bottom: 15px; }
+.hha-modal-close { position: absolute; right: 20px; top: 15px; font-size: 1.8rem; font-weight: 300; cursor: pointer; color: var(--gray-500); transition: var(--transition); width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+.hha-modal-close:hover { color: var(--danger); background-color: var(--light-danger); }
+.hha-modal-title { margin-top: 0; margin-bottom: 20px; color: var(--primary-dark); font-size: 1.5rem; font-weight: 600; border-bottom: 2px solid var(--gray-200); padding-bottom: 15px; }
 
-.map-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); z-index: 1000; overflow-y: auto; backdrop-filter: blur(3px); transition: all 0.3s ease; }
-.map-modal.active { display: block; animation: fadeIn 0.3s ease; }
-.map-modal-content { background-color: white; margin: 4% auto; padding: 30px; border-radius: var(--border-radius); max-width: 800px; width: 90%; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15); position: relative; transform: translateY(20px); opacity: 0; animation: modalSlideIn 0.4s ease forwards; }
-.map-modal-close { position: absolute; right: 20px; top: 15px; font-size: 1.8rem; font-weight: 300; cursor: pointer; color: var(--gray-500); transition: var(--transition); width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
-.map-modal-close:hover { color: var(--danger); background-color: var(--light-danger); }
-.map-modal-title { margin-top: 0; margin-bottom: 20px; color: var(--primary-dark); font-size: 1.5rem; font-weight: 600; border-bottom: 2px solid var(--gray-200); padding-bottom: 15px; }
+.hha-map-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); z-index: 1000; overflow-y: auto; backdrop-filter: blur(3px); transition: all 0.3s ease; }
+.hha-map-modal.active { display: block; animation: fadeIn 0.3s ease; }
+.hha-map-modal-content { background-color: white; margin: 4% auto; padding: 30px; border-radius: var(--border-radius); max-width: 800px; width: 90%; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15); position: relative; transform: translateY(20px); opacity: 0; animation: modalSlideIn 0.4s ease forwards; }
+.hha-map-modal-close { position: absolute; right: 20px; top: 15px; font-size: 1.8rem; font-weight: 300; cursor: pointer; color: var(--gray-500); transition: var(--transition); width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+.hha-map-modal-close:hover { color: var(--danger); background-color: var(--light-danger); }
+.hha-map-modal-title { margin-top: 0; margin-bottom: 20px; color: var(--primary-dark); font-size: 1.5rem; font-weight: 600; border-bottom: 2px solid var(--gray-200); padding-bottom: 15px; }
 .map-search { margin: 20px 0; width: 100%; display: flex; }
 .map-search input { flex: 1; padding: 12px 15px; border: 1px solid var(--gray-300); border-radius: var(--border-radius) 0 0 var(--border-radius); font-size: 1rem; transition: var(--transition); }
 .map-search input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(39, 195, 187, 0.2); }
