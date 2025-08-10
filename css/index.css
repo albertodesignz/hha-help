@@ -190,6 +190,12 @@ h1 {
   position: relative;
   overflow: hidden;
 }
+.tab .tab-text { padding-right: 26px; display: inline-block; }
+.add-task-tab-btn { position: absolute; right: 6px; top: 6px; width: 22px; height: 22px; border-radius: 50%; border: none; background: var(--primary); color: #fff; cursor: pointer; font-weight: 700; line-height: 22px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+.add-task-tab-btn:hover { transform: translateY(-1px); }
+.tab .tab-text { padding-right: 26px; display: inline-block; }
+.add-task-tab-btn { position: absolute; right: 6px; top: 6px; width: 22px; height: 22px; border-radius: 50%; border: none; background: var(--primary); color: #fff; cursor: pointer; font-weight: 700; line-height: 22px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+.add-task-tab-btn:hover { transform: translateY(-1px); }
     
 .tab::after {
   content: '';
@@ -414,6 +420,8 @@ h1 {
 .list-view .tab-content { display: block !important; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px dashed #ccc; }
 .tab-title { display: none; }
 .list-view .tab-title { display: block; padding: 10px; background-color: #f1f1f1; border-radius: 4px; margin-top: 0; font-size: 1.2rem; color: #333; }
+.add-task-title-btn { margin-left: 8px; background: var(--primary); color: #fff; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-weight: 700; line-height: 24px; }
+.add-task-title-btn:hover { transform: translateY(-1px); }
 .list-view .task { padding: 15px; margin-bottom: 15px; }
 .list-view .task label { display: flex; align-items: flex-start; margin-bottom: 10px; }
 .list-view .task-checkbox { margin-right: 15px; margin-top: 3px; transform: scale(1.2); cursor: pointer; }

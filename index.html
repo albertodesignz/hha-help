@@ -191,6 +191,22 @@
     </div>
   </div>
 
+  <div class="modal" id="add-task-modal">
+    <div class="modal-content">
+      <span class="modal-close" id="add-task-modal-close">×</span>
+      <h3 class="modal-title">Add Task</h3>
+      <div class="case-form">
+        <label class="case-form-label">Task title
+          <input type="text" id="new-task-title" class="case-input" placeholder="e.g., Call insurance">
+        </label>
+        <div class="form-actions">
+          <button id="add-task-save-btn" class="case-save-btn">Add</button>
+          <button id="add-task-cancel-btn" class="case-cancel-btn">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="cases-container" class="cases-container">
     <div class="cases-header">
       <h2>Cases</h2>
@@ -230,13 +246,13 @@
       </button>
       
     </div></div><div class="tabs">
-    <div class="tab urgent active" data-tab="immediate">Urgent Tasks</div>
-    <div class="tab" data-tab="short-term">Short-Term Actions</div>
-    <div class="tab" data-tab="long-term">Long-Term Follow-up</div>
+    <div class="tab urgent active" data-tab="immediate"><span class="tab-text">Urgent Tasks</span><button class="add-task-tab-btn" data-target="immediate" title="Add task">+</button></div>
+    <div class="tab" data-tab="short-term"><span class="tab-text">Short-Term Actions</span><button class="add-task-tab-btn" data-target="short-term" title="Add task">+</button></div>
+    <div class="tab" data-tab="long-term"><span class="tab-text">Long-Term Follow-up</span><button class="add-task-tab-btn" data-target="long-term" title="Add task">+</button></div>
   </div>
   
   <div class="tab-content active" id="immediate">
-    <h2 class="tab-title">Urgent Tasks</h2>
+    <h2 class="tab-title">Urgent Tasks <button class="add-task-title-btn" data-target="immediate" title="Add task">+</button></h2>
     <div class="task" data-task-id="contact-physician">
       <label>
         <input type="checkbox" class="task-checkbox" data-task-id="contact-physician">
@@ -387,7 +403,7 @@
   </div>
   
   <div class="tab-content" id="short-term">
-    <h2 class="tab-title">Short-Term Actions</h2>
+    <h2 class="tab-title">Short-Term Actions <button class="add-task-title-btn" data-target="short-term" title="Add task">+</button></h2>
     <div class="task" data-task-id="confirm-plan">
       <label>
         <input type="checkbox" class="task-checkbox" data-task-id="confirm-plan">
@@ -537,7 +553,7 @@
   </div>
   
   <div class="tab-content" id="long-term">
-    <h2 class="tab-title">Long-Term Follow-up</h2>
+    <h2 class="tab-title">Long-Term Follow-up <button class="add-task-title-btn" data-target="long-term" title="Add task">+</button></h2>
     <div class="task" data-task-id="monitor-care">
       <label>
         <input type="checkbox" class="task-checkbox" data-task-id="monitor-care">

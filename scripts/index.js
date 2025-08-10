@@ -110,6 +110,12 @@ document.addEventListener('DOMContentLoaded', async function () {
   const currentCaseBar = document.getElementById('current-case-bar')
   const currentCaseNameEl = document.getElementById('current-case-name')
   const checklistContainer = document.getElementById('checklist-container')
+  const addTaskModal = document.getElementById('add-task-modal')
+  const addTaskModalClose = document.getElementById('add-task-modal-close')
+  const addTaskTitleInput = document.getElementById('new-task-title')
+  const addTaskSaveBtn = document.getElementById('add-task-save-btn')
+  const addTaskCancelBtn = document.getElementById('add-task-cancel-btn')
+  let pendingAddCategory = null
 
   const caseModal = document.getElementById('case-modal')
   const caseModalClose = document.getElementById('case-modal-close')
@@ -173,6 +179,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     setCurrentCaseId(caseId)
     if (currentCaseNameEl) currentCaseNameEl.textContent = cs.name || 'Untitled Case'
     showChecklist()
+    renderAllCustomTasks()
     loadTaskStatuses()
     updateDashboard()
   }
@@ -223,6 +230,168 @@ document.addEventListener('DOMContentLoaded', async function () {
     catch { window.prompt('Copy case link:', shareUrl) }
   })
 
+  // Add task per category
+  function openAddTaskModal(categoryId) {
+    pendingAddCategory = categoryId
+    if (!addTaskModal) return
+    addTaskTitleInput.value = ''
+    addTaskModal.classList.add('active')
+    setTimeout(() => addTaskTitleInput?.focus(), 0)
+  }
+  function closeAddTaskModal() { addTaskModal?.classList.remove('active'); pendingAddCategory = null }
+  document.querySelectorAll('.add-task-title-btn, .add-task-tab-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation()
+      const target = btn.getAttribute('data-target')
+      openAddTaskModal(target)
+    })
+  })
+  addTaskModalClose?.addEventListener('click', closeAddTaskModal)
+  addTaskCancelBtn?.addEventListener('click', closeAddTaskModal)
+  addTaskSaveBtn?.addEventListener('click', () => {
+    const title = (addTaskTitleInput?.value || '').trim()
+    if (!pendingAddCategory || !title) { closeAddTaskModal(); return }
+    const cid = getCurrentCaseId()
+    if (!cid) { alert('Open a case first'); closeAddTaskModal(); return }
+    const key = `custom-tasks-${pendingAddCategory}`
+    const list = JSON.parse(storageGet(key) || '[]')
+    const newTaskId = `custom-${pendingAddCategory}-${Date.now()}`
+    list.push({ id: newTaskId, title, createdAt: Date.now() })
+    storageSet(key, JSON.stringify(list))
+    closeAddTaskModal()
+    renderCustomTasks(pendingAddCategory)
+  })
+
+  function renderAllCustomTasks() {
+    ['immediate','short-term','long-term'].forEach(renderCustomTasks)
+  }
+  function renderCustomTasks(categoryId) {
+    const container = document.querySelector(`#${categoryId}`)
+    if (!container) return
+    let anchor = container.querySelector('.custom-tasks-anchor')
+    if (!anchor) {
+      anchor = document.createElement('div')
+      anchor.className = 'custom-tasks-anchor'
+      container.appendChild(anchor)
+    }
+    const key = `custom-tasks-${categoryId}`
+    const list = JSON.parse(storageGet(key) || '[]')
+    // Clear current custom tasks
+    anchor.querySelectorAll('[data-custom-task="true"]').forEach(n => n.remove())
+    list.forEach(item => {
+      const task = document.createElement('div')
+      task.className = 'task'
+      task.setAttribute('data-task-id', item.id)
+      task.setAttribute('data-custom-task', 'true')
+      task.innerHTML = `
+        <label>
+          <input type="checkbox" class="task-checkbox" data-task-id="${item.id}">
+          <span class="task-title-text">${item.title}</span>
+        </label>
+        <div class="checkbox-group">
+          <label><input type="radio" name="${item.id}" value="not-started" checked> Not Started</label>
+          <label><input type="radio" name="${item.id}" value="contacted"> In Progress</label>
+          <label><input type="radio" name="${item.id}" value="done"> Done</label>
+        </div>
+        <div class="notes-section">
+          <div class="notes-heading">
+            <button class="add-note-btn">Add Note</button>
+            <button class="notes-toggle">Show Notes</button>
+          </div>
+          <div class="notes-content">
+            <div class="saved-notes"><p>No notes yet.</p></div>
+            <textarea class="add-note-area" placeholder="Add a note about this task..."></textarea>
+            <div class="note-actions-bar">
+              <button class="save-note-btn">Save Note</button>
+              <button class="clear-note-btn">Clear</button>
+            </div>
+          </div>
+        </div>
+      `
+      anchor.appendChild(task)
+    })
+    // Re-initialize behaviors for new tasks
+    initializeNewTasks(anchor.querySelectorAll('.task'))
+  }
+
+  function initializeNewTasks(newTasks) {
+    // mimic setup from above for tasks
+    newTasks.forEach(task => {
+      if (task.querySelector('.task-body')) return
+      const firstLabel = task.querySelector('label'); if (!firstLabel) return
+      const header = document.createElement('div'); header.className = 'task-header'
+      task.insertBefore(header, firstLabel); header.appendChild(firstLabel)
+      const toggleBtn = document.createElement('button'); toggleBtn.type = 'button'; toggleBtn.className = 'task-toggle'; toggleBtn.setAttribute('aria-label','Toggle task details'); toggleBtn.setAttribute('aria-expanded','false'); toggleBtn.innerHTML = '▸'; header.appendChild(toggleBtn)
+      const body = document.createElement('div'); body.className = 'task-body'; while (header.nextSibling) body.appendChild(header.nextSibling); task.appendChild(body)
+      toggleBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); const isExpanded = task.classList.toggle('expanded'); toggleBtn.setAttribute('aria-expanded', String(isExpanded)); toggleBtn.innerHTML = isExpanded ? '▾' : '▸' })
+    })
+    // status persistence
+    newTasks.forEach(task => {
+      const taskId = task.getAttribute('data-task-id')
+      const radios = task.querySelectorAll('input[type="radio"]')
+      const checkbox = task.querySelector('.task-checkbox')
+      radios.forEach(r => r.addEventListener('change', () => {
+        if (!r.checked) return
+        const statusData = { status: r.value, timestamp: new Date().toLocaleString(), updated: Date.now() }
+        storageSet(`task-${taskId}`, JSON.stringify(statusData))
+        if (checkbox) checkbox.checked = r.value === 'done'
+        updateDashboard()
+      }))
+      if (checkbox) checkbox.addEventListener('change', () => {
+        const statusData = { status: checkbox.checked ? 'done' : 'not-started', timestamp: new Date().toLocaleString(), updated: Date.now() }
+        storageSet(`task-${taskId}`, JSON.stringify(statusData))
+        const targetRadio = task.querySelector(`input[value="${statusData.status}"]`); if (targetRadio) targetRadio.checked = true
+        updateDashboard()
+      })
+      // notes wiring
+      const notesToggle = task.querySelector('.notes-toggle')
+      const addNoteBtn = task.querySelector('.add-note-btn')
+      const saveNoteBtn = task.querySelector('.save-note-btn')
+      const clearBtn = task.querySelector('.clear-note-btn')
+      notesToggle?.addEventListener('click', () => {
+        const notesContent = notesToggle.closest('.notes-section').querySelector('.notes-content')
+        notesContent.classList.toggle('active')
+        notesToggle.textContent = notesContent.classList.contains('active') ? 'Hide Notes' : 'Show Notes'
+      })
+      addNoteBtn?.addEventListener('click', () => {
+        const notesContent = addNoteBtn.closest('.notes-section').querySelector('.notes-content')
+        const toggleButton = addNoteBtn.closest('.notes-section').querySelector('.notes-toggle')
+        if (!notesContent.classList.contains('active')) { notesContent.classList.add('active'); toggleButton.textContent = 'Hide Notes' }
+        notesContent.querySelector('.add-note-area').focus()
+      })
+      saveNoteBtn?.addEventListener('click', () => {
+        const notesSection = saveNoteBtn.closest('.notes-section')
+        const t = saveNoteBtn.closest('.task')
+        const id = t.getAttribute('data-task-id')
+        const noteTextarea = notesSection.querySelector('.add-note-area')
+        const noteText = noteTextarea.value.trim(); if (!noteText) return
+        const note = { id: Date.now(), text: noteText, timestamp: new Date().toLocaleString() }
+        const savedNotes = JSON.parse(storageGet(`notes-${id}`) || '[]'); savedNotes.push(note)
+        storageSet(`notes-${id}`, JSON.stringify(savedNotes))
+        noteTextarea.value = ''
+        const savedNotesContainer = notesSection.querySelector('.saved-notes')
+        // reuse loadNotes
+        loadNotes(id, savedNotesContainer)
+      })
+      clearBtn?.addEventListener('click', () => {
+        const noteTextarea = clearBtn.closest('.notes-section').querySelector('.add-note-area')
+        noteTextarea.value = ''
+      })
+      // load saved notes
+      const savedNotesContainer = task.querySelector('.saved-notes')
+      loadNotes(task.getAttribute('data-task-id'), savedNotesContainer)
+      // restore saved status
+      const saved = storageGet(`task-${task.getAttribute('data-task-id')}`)
+      if (saved) {
+        try {
+          const sd = JSON.parse(saved)
+          const rb = task.querySelector(`input[value="${sd.status}"]`)
+          if (rb) rb.checked = true
+          if (checkbox) checkbox.checked = sd.status === 'done'
+        } catch {}
+      }
+    })
+  }
 
   // Collapsible tasks: wrap task details and add toggle; collapsed by default
   tasks.forEach(task => {
@@ -421,6 +590,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
   // Initialize
   loadTaskStatuses()
+  renderAllCustomTasks()
 
   // Tooltip behavior (mobile)
   const tooltips = document.querySelectorAll('.tooltip')
@@ -588,6 +758,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     const cs = getCaseById(paramCaseId)
     if (currentCaseNameEl) currentCaseNameEl.textContent = cs?.name || 'Untitled Case'
     showChecklist()
+    renderAllCustomTasks()
     loadTaskStatuses()
     updateDashboard()
   } else {
