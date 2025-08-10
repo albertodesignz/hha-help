@@ -18,6 +18,27 @@ const supabaseUrl = 'https://gqivebwnxivqzzdsyrlm.supabase.co'
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxaXZlYndueGl2cXp6ZHN5cmxtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUwODk3NDAsImV4cCI6MjA2MDY2NTc0MH0.hxvSDFeETYrcroul1FalpDQRQrRJ3yVk0en20IXgUI4'
 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey)
 
+// Case storage helpers
+function getCurrentCaseId() { return localStorage.getItem('current-case-id') }
+function setCurrentCaseId(caseId) { if (caseId) localStorage.setItem('current-case-id', caseId); else localStorage.removeItem('current-case-id') }
+function makeCaseKey(baseKey) {
+  const caseId = getCurrentCaseId()
+  if (!caseId) return baseKey
+  return `case-${caseId}::${baseKey}`
+}
+function storageGet(baseKey) { return localStorage.getItem(makeCaseKey(baseKey)) }
+function storageSet(baseKey, value) { localStorage.setItem(makeCaseKey(baseKey), value) }
+function storageRemove(baseKey) { localStorage.removeItem(makeCaseKey(baseKey)) }
+function listAllCaseKeys(caseId) {
+  const prefix = `case-${caseId}::`
+  const keys = []
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i)
+    if (k && k.startsWith(prefix)) keys.push(k)
+  }
+  return keys
+}
+
 // Check authentication status
 async function checkAuth() {
   const testUser = JSON.parse(localStorage.getItem('healthAideTestUser'))
@@ -78,10 +99,171 @@ document.addEventListener('DOMContentLoaded', async function () {
   // Tasks
   const tasks = document.querySelectorAll('.task')
 
+  // Cases UI elements
+  const casesContainer = document.getElementById('cases-container')
+  const casesList = document.getElementById('cases-list')
+  const casesEmpty = document.getElementById('cases-empty')
+  const newCaseBtn = document.getElementById('new-case-btn')
+  const newCaseInlineBtn = document.getElementById('new-case-inline-btn')
+  const switchCaseBtn = document.getElementById('switch-case-btn')
+  const shareCurrentCaseBtn = document.getElementById('share-current-case-btn')
+  const currentCaseBar = document.getElementById('current-case-bar')
+  const currentCaseNameEl = document.getElementById('current-case-name')
+  const checklistContainer = document.getElementById('checklist-container')
+
+  const caseModal = document.getElementById('case-modal')
+  const caseModalClose = document.getElementById('case-modal-close')
+  const caseNameInput = document.getElementById('case-name')
+  const patientNameInput = document.getElementById('patient-name')
+  const caseSaveBtn = document.getElementById('case-save-btn')
+  const caseCancelBtn = document.getElementById('case-cancel-btn')
+
+  function readCases() {
+    try { return JSON.parse(localStorage.getItem('cases') || '[]') } catch { return [] }
+  }
+  function writeCases(cases) {
+    localStorage.setItem('cases', JSON.stringify(cases))
+  }
+  function getCaseById(caseId) { return readCases().find(c => c.id === caseId) }
+  function showCases() {
+    if (casesContainer) casesContainer.style.display = 'block'
+    if (checklistContainer) checklistContainer.style.display = 'none'
+    if (currentCaseBar) currentCaseBar.style.display = 'none'
+  }
+  function showChecklist() {
+    if (casesContainer) casesContainer.style.display = 'none'
+    if (checklistContainer) checklistContainer.style.display = 'block'
+    if (currentCaseBar) currentCaseBar.style.display = 'flex'
+  }
+  function renderCases() {
+    if (!casesList || !casesEmpty) return
+    const allCases = readCases().sort((a, b) => (b.updatedAt || b.createdAt) - (a.updatedAt || a.createdAt))
+    casesList.innerHTML = ''
+    if (allCases.length === 0) { casesEmpty.style.display = 'block' }
+    else {
+      casesEmpty.style.display = 'none'
+      allCases.forEach(cs => {
+        const card = document.createElement('div')
+        card.className = 'case-card'
+        card.innerHTML = `
+          <div class="case-title">${cs.name || 'Untitled Case'}</div>
+          <div class="case-sub">Patient: ${cs.patientName || '—'}</div>
+          <div class="case-sub">Created: ${new Date(cs.createdAt).toLocaleString()}</div>
+          <div class="case-actions">
+            <button class="case-open-btn" data-id="${cs.id}">Open</button>
+            <button class="case-share-btn" data-id="${cs.id}">Share</button>
+            <button class="case-delete-btn" data-id="${cs.id}">Delete</button>
+          </div>
+        `
+        casesList.appendChild(card)
+      })
+      casesList.querySelectorAll('.case-open-btn').forEach(btn => btn.addEventListener('click', () => openCase(btn.getAttribute('data-id'))))
+      casesList.querySelectorAll('.case-share-btn').forEach(btn => btn.addEventListener('click', () => shareCase(btn.getAttribute('data-id'))))
+      casesList.querySelectorAll('.case-delete-btn').forEach(btn => btn.addEventListener('click', () => deleteCase(btn.getAttribute('data-id'))))
+    }
+  }
+  async function shareCase(caseId) {
+    const shareUrl = `${window.location.origin}${window.location.pathname}?case=${encodeURIComponent(caseId)}`
+    try { await navigator.clipboard.writeText(shareUrl); alert('Case link copied to clipboard') }
+    catch { window.prompt('Copy case link:', shareUrl) }
+  }
+  function openCase(caseId) {
+    const cs = getCaseById(caseId)
+    if (!cs) { alert('Case not found'); return }
+    setCurrentCaseId(caseId)
+    if (currentCaseNameEl) currentCaseNameEl.textContent = cs.name || 'Untitled Case'
+    showChecklist()
+    loadTaskStatuses()
+    updateDashboard()
+  }
+  function deleteCase(caseId) {
+    const cs = getCaseById(caseId)
+    if (!cs) return
+    if (!confirm(`Delete case "${cs.name}" and all its progress/notes?`)) return
+    const keys = listAllCaseKeys(caseId)
+    keys.forEach(k => localStorage.removeItem(k))
+    const remaining = readCases().filter(c => c.id !== caseId)
+    writeCases(remaining)
+    if (getCurrentCaseId() === caseId) setCurrentCaseId(null)
+    renderCases()
+    showCases()
+  }
+  function openCaseModal() {
+    if (!caseModal) return
+    caseNameInput.value = ''
+    patientNameInput.value = ''
+    caseModal.classList.add('active')
+  }
+  function closeCaseModal() { if (caseModal) caseModal.classList.remove('active') }
+  function createCase() {
+    const name = (caseNameInput?.value || '').trim()
+    const patientName = (patientNameInput?.value || '').trim()
+    if (!name) { alert('Please enter a case name') ; return }
+    const id = String(Date.now())
+    const now = Date.now()
+    const allCases = readCases()
+    allCases.push({ id, name, patientName, createdAt: now, updatedAt: now })
+    writeCases(allCases)
+    closeCaseModal()
+    renderCases()
+    openCase(id)
+  }
+
+  newCaseBtn?.addEventListener('click', openCaseModal)
+  newCaseInlineBtn?.addEventListener('click', openCaseModal)
+  switchCaseBtn?.addEventListener('click', () => { showCases(); renderCases() })
+  caseModalClose?.addEventListener('click', closeCaseModal)
+  caseCancelBtn?.addEventListener('click', closeCaseModal)
+  caseSaveBtn?.addEventListener('click', createCase)
+  shareCurrentCaseBtn?.addEventListener('click', async () => {
+    const cid = getCurrentCaseId()
+    if (!cid) { alert('Open a case first') ; return }
+    const shareUrl = `${window.location.origin}${window.location.pathname}?case=${encodeURIComponent(cid)}`
+    try { await navigator.clipboard.writeText(shareUrl); alert('Case link copied to clipboard') }
+    catch { window.prompt('Copy case link:', shareUrl) }
+  })
+
+
+  // Collapsible tasks: wrap task details and add toggle; collapsed by default
+  tasks.forEach(task => {
+    // Avoid re-initializing if already structured
+    if (task.querySelector('.task-body')) return
+
+    const firstLabel = task.querySelector('label')
+    if (!firstLabel) return
+
+    const header = document.createElement('div')
+    header.className = 'task-header'
+    task.insertBefore(header, firstLabel)
+    header.appendChild(firstLabel)
+
+    const toggleBtn = document.createElement('button')
+    toggleBtn.type = 'button'
+    toggleBtn.className = 'task-toggle'
+    toggleBtn.setAttribute('aria-label', 'Toggle task details')
+    toggleBtn.setAttribute('aria-expanded', 'false')
+    toggleBtn.innerHTML = '▸'
+    header.appendChild(toggleBtn)
+
+    const body = document.createElement('div')
+    body.className = 'task-body'
+    // Move all siblings after header into body
+    while (header.nextSibling) body.appendChild(header.nextSibling)
+    task.appendChild(body)
+
+    toggleBtn.addEventListener('click', (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      const isExpanded = task.classList.toggle('expanded')
+      toggleBtn.setAttribute('aria-expanded', String(isExpanded))
+      toggleBtn.innerHTML = isExpanded ? '▾' : '▸'
+    })
+  })
+
   function loadTaskStatuses() {
     tasks.forEach(task => {
       const taskId = task.getAttribute('data-task-id')
-      const savedStatusJson = localStorage.getItem(`task-${taskId}`)
+      const savedStatusJson = storageGet(`task-${taskId}`)
       const taskCheckbox = task.querySelector('.task-checkbox')
 
       if (savedStatusJson) {
@@ -95,7 +277,7 @@ document.addEventListener('DOMContentLoaded', async function () {
           if (radioButton) {
             radioButton.checked = true
             const statusData = { status: savedStatusJson, timestamp: new Date().toLocaleString(), updated: Date.now() }
-            localStorage.setItem(`task-${taskId}`, JSON.stringify(statusData))
+            storageSet(`task-${taskId}`, JSON.stringify(statusData))
           }
           if (taskCheckbox) taskCheckbox.checked = savedStatusJson === 'done'
         }
@@ -117,7 +299,7 @@ document.addEventListener('DOMContentLoaded', async function () {
       radio.addEventListener('change', () => {
         if (!radio.checked) return
         const statusData = { status: radio.value, timestamp: new Date().toLocaleString(), updated: Date.now() }
-        localStorage.setItem(`task-${taskId}`, JSON.stringify(statusData))
+        storageSet(`task-${taskId}`, JSON.stringify(statusData))
         if (taskCheckbox) taskCheckbox.checked = radio.value === 'done'
         updateDashboard()
       })
@@ -126,7 +308,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     if (taskCheckbox) {
       taskCheckbox.addEventListener('change', () => {
         const statusData = { status: taskCheckbox.checked ? 'done' : 'not-started', timestamp: new Date().toLocaleString(), updated: Date.now() }
-        localStorage.setItem(`task-${taskId}`, JSON.stringify(statusData))
+        storageSet(`task-${taskId}`, JSON.stringify(statusData))
         const targetRadio = task.querySelector(`input[value="${statusData.status}"]`)
         if (targetRadio) targetRadio.checked = true
         updateDashboard()
@@ -141,7 +323,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     tasks.forEach(task => {
       const taskId = task.getAttribute('data-task-id')
-      const savedStatusJson = localStorage.getItem(`task-${taskId}`)
+      const savedStatusJson = storageGet(`task-${taskId}`)
       let currentStatus = 'not-started'
       if (savedStatusJson) {
         try { currentStatus = JSON.parse(savedStatusJson).status } catch { currentStatus = savedStatusJson }
@@ -151,9 +333,14 @@ document.addEventListener('DOMContentLoaded', async function () {
       else inProgressCount++
     })
 
-    document.getElementById('not-started-count').textContent = notStartedCount
-    document.getElementById('in-progress-count').textContent = inProgressCount
-    document.getElementById('completed-count').textContent = completedCount
+    const notStartedEl = document.getElementById('not-started-count')
+    const inProgressEl = document.getElementById('in-progress-count')
+    const completedEl = document.getElementById('completed-count')
+    if (!notStartedEl || !inProgressEl || !completedEl) return
+
+    notStartedEl.textContent = notStartedCount
+    inProgressEl.textContent = inProgressCount
+    completedEl.textContent = completedCount
   }
 
   // Notes
@@ -186,9 +373,9 @@ document.addEventListener('DOMContentLoaded', async function () {
       const noteText = noteTextarea.value.trim()
       if (!noteText) return
       const note = { id: Date.now(), text: noteText, timestamp: new Date().toLocaleString() }
-      const savedNotes = JSON.parse(localStorage.getItem(`notes-${taskId}`) || '[]')
+      const savedNotes = JSON.parse(storageGet(`notes-${taskId}`) || '[]')
       savedNotes.push(note)
-      localStorage.setItem(`notes-${taskId}`, JSON.stringify(savedNotes))
+      storageSet(`notes-${taskId}`, JSON.stringify(savedNotes))
       noteTextarea.value = ''
       const savedNotesContainer = notesSection.querySelector('.saved-notes')
       loadNotes(taskId, savedNotesContainer)
@@ -204,7 +391,7 @@ document.addEventListener('DOMContentLoaded', async function () {
   })
 
   function loadNotes(taskId, container) {
-    const savedNotes = JSON.parse(localStorage.getItem(`notes-${taskId}`) || '[]')
+    const savedNotes = JSON.parse(storageGet(`notes-${taskId}`) || '[]')
     container.innerHTML = ''
     if (savedNotes.length === 0) { container.innerHTML = '<p>No notes yet.</p>'; return }
     savedNotes.sort((a, b) => b.id - a.id)
@@ -226,9 +413,9 @@ document.addEventListener('DOMContentLoaded', async function () {
 
   function deleteNote(taskId, noteId, container) {
     if (!confirm('Are you sure you want to delete this note?')) return
-    const savedNotes = JSON.parse(localStorage.getItem(`notes-${taskId}`) || '[]')
+    const savedNotes = JSON.parse(storageGet(`notes-${taskId}`) || '[]')
     const updatedNotes = savedNotes.filter(note => note.id !== noteId)
-    localStorage.setItem(`notes-${taskId}`, JSON.stringify(updatedNotes))
+    storageSet(`notes-${taskId}`, JSON.stringify(updatedNotes))
     loadNotes(taskId, container)
   }
 
@@ -262,13 +449,13 @@ document.addEventListener('DOMContentLoaded', async function () {
     if (!confirm('Are you sure you want to reset all progress? This cannot be undone.')) return
     tasks.forEach(task => {
       const taskId = task.getAttribute('data-task-id')
-      localStorage.removeItem(`task-${taskId}`)
+      storageRemove(`task-${taskId}`)
       const notStartedRadio = task.querySelector('input[value="not-started"]')
       if (notStartedRadio) notStartedRadio.checked = true
     })
     updateDashboard()
   })
-  document.body.appendChild(clearButton)
+  if (checklistContainer) checklistContainer.appendChild(clearButton)
 
   const clearNotesButton = document.createElement('button')
   clearNotesButton.textContent = 'Clear All Notes'
@@ -284,16 +471,16 @@ document.addEventListener('DOMContentLoaded', async function () {
     if (!confirm('Are you sure you want to delete all notes? This cannot be undone.')) return
     tasks.forEach(task => {
       const taskId = task.getAttribute('data-task-id')
-      localStorage.removeItem(`notes-${taskId}`)
+      storageRemove(`notes-${taskId}`)
       const savedNotesContainer = task.querySelector('.saved-notes')
       loadNotes(taskId, savedNotesContainer)
     })
   })
-  document.body.appendChild(clearNotesButton)
+  if (checklistContainer) checklistContainer.appendChild(clearNotesButton)
 
   // Task Filter Modal
   const modal = document.getElementById('task-filter-modal')
-  const modalClose = document.querySelector('.modal-close')
+  const modalClose = document.querySelector('#task-filter-modal .modal-close')
   const statusItems = document.querySelectorAll('.status-item')
   const filteredTasksList = document.getElementById('filtered-tasks-list')
   const modalStatusType = document.getElementById('modal-status-type')
@@ -391,5 +578,23 @@ document.addEventListener('DOMContentLoaded', async function () {
     googleMap.src = mapSrc
   })
   zipcodeInput.addEventListener('keyup', (e) => { if (e.key === 'Enter') searchMapBtn.click() })
+
+  // Initial view: show cases or active case
+  renderCases()
+  const initialParams = new URLSearchParams(window.location.search)
+  const paramCaseId = initialParams.get('case')
+  if (paramCaseId && getCaseById(paramCaseId)) {
+    setCurrentCaseId(paramCaseId)
+    const cs = getCaseById(paramCaseId)
+    if (currentCaseNameEl) currentCaseNameEl.textContent = cs?.name || 'Untitled Case'
+    showChecklist()
+    loadTaskStatuses()
+    updateDashboard()
+  } else {
+    const activeCaseId = getCurrentCaseId()
+    const activeCase = activeCaseId ? getCaseById(activeCaseId) : null
+    if (activeCase) { if (currentCaseNameEl) currentCaseNameEl.textContent = activeCase.name || 'Untitled Case'; showChecklist() }
+    else { showCases() }
+  }
 })
 
