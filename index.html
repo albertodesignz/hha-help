@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Home Health Aide Checklist</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="scripts/index.js" defer></script>
+  <link rel="stylesheet" href="css/index.css">
+
+</head>
+<body>
+  <div class="header">
+    <div class="header-left">
+      <div class="logo-container">
+        <img src="logo.svg" alt="Home Health Aide Logo" class="logo">
+      </div>
+      <h1>Home Health Aide Checklist</h1>
+    </div>
+    <div class="header-right">
+      <div id="userInfo">
+        <span id="userName">Welcome!</span>
+        <span class="test-badge" id="testBadge">Test Account</span>
+        <button id="logoutBtn">Logout</button>
+      </div>
+      <button id="view-toggle" class="view-toggle">
+        <span class="view-toggle-icon">📋</span>
+        <span class="view-toggle-text">Simple List</span>
+      </button>
+    </div>
+  </div>
+  
+  <div class="dashboard-info">
+    <h3>Dashboard Summary</h3>
+    <p class="description">
+      This checklist is to keep track of what needs to happen for Mom to get in-home care. Each task has a brief explanation and checkboxes so you can easily track what's been started, what's pending, and what's done.
+    </p>
+    <div class="status-summary">
+      <div class="status-item" data-status="not-started">Not Started: <span id="not-started-count">0</span></div>
+      <div class="status-item" data-status="in-progress">In Progress: <span id="in-progress-count">0</span></div>
+      <div class="status-item" data-status="completed">Completed: <span id="completed-count">0</span></div>
+    </div>
+
+  </div>
+  
+  <!-- Task Filter Modal -->
+  <div class="modal" id="task-filter-modal">
+    <div class="modal-content">
+      <span class="modal-close">&times;</span>
+      <h3 class="modal-title">Tasks by Status: <span id="modal-status-type"></span></h3>
+      <div id="filtered-tasks-list"></div>
+    </div>
+  </div>
+  
+  <!-- Map Modal -->
+  <div class="map-modal" id="map-modal">
+    <div class="map-modal-content">
+      <span class="map-modal-close">&times;</span>
+      <h3 class="map-modal-title">Find Home Health Agencies Near You</h3>
+      <div class="map-search">
+        <input type="text" id="zipcode-input" placeholder="Enter zipcode or address" value="Hialeah, FL 33018">
+        <button id="search-map-btn">Search</button>
+      </div>
+      <div class="map-container">
+        <iframe id="google-map" src="https://www.google.com/maps/embed?pb=!1m16!1m12!1m3!1d96577.70848395422!2d-80.39086459025441!3d25.899393149397685!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!2m1!1shome%20health%20agencie%20near%203156%20West%2078%20Pl%2C%20Hialeah%2C%20FL%2033018.!5e0!3m2!1sen!2sus!4v1749921336156!5m2!1sen!2sus" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      </div>
+    </div>
+  </div>
+  
+  <div class="tabs">
+    <div class="tab active urgent" data-tab="immediate">Do ASAP</div>
+    <div class="tab" data-tab="short-term">Short-Term Actions</div>
+    <div class="tab" data-tab="long-term">Long-Term Follow-up</div>
+  </div>
+  
+  <div class="tab-content active" id="immediate">
+    <h2 class="tab-title">Do ASAP</h2>
+    <div class="task" data-task-id="contact-physician">
+      <label>
+        <input type="checkbox" class="task-checkbox" data-task-id="contact-physician">
+        <div class="tooltip">
+          <span class="info-icon">ℹ️</span>
+          <div class="tooltip-content">
+            Ask the doctor to evaluate the senior and order Medicare-covered home health care, which may include a nurse and a personal care aide.
+          </div>
+        </div>
+        <span class="task-title-text">Contact Primary Care Physician for Home Health Order</span>
+      </label>
+      <p>Ask the doctor to evaluate and order Medicare-covered home health aide visits. Website: <a href="https://www.medicare.gov/care-compare/" target="_blank">medicare.gov/care-compare</a></p>
+      <div class="checkbox-group">
+        <label><input type="radio" name="contact-physician" value="not-started" checked> Not Started</label>
+        <label><input type="radio" name="contact-physician" value="contacted"> Contacted</label>
+        <label><input type="radio" name="contact-physician" value="process-started"> Process Started</label>
+        <label><input type="radio" name="contact-physician" value="waiting"> Waiting for Response</label>
+        <label><input type="radio" name="contact-physician" value="done"> Done</label>
+      </div>
+      
+      <div class="notes-section">
+        <div class="notes-heading">
+          <button class="add-note-btn">Add Note</button>
+          <button class="notes-toggle">Show Notes</button>
+        </div>
+        <div class="notes-content">
+          <div class="saved-notes"></div>
+          <textarea class="add-note-area" placeholder="Add a note about this task..."></textarea>
+          <div class="note-actions-bar">
+            <button class="save-note-btn">Save Note</button>
+            <button class="clear-note-btn">Clear</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="task" data-task-id="call-helpline">
+      <label>
+        <input type="checkbox" class="task-checkbox" data-task-id="call-helpline">
+        <div class="tooltip">
+          <span class="info-icon">ℹ️</span>
+          <div class="tooltip-content">
+            Call to start the screening process for Medicaid long-term care and state-funded programs that can provide a home health aide.
+          </div>
+        </div>
+        <span class="task-title-text">Call Florida Elder Helpline / Alliance for Aging</span>
+      </label>
+      <p>Call 1-800-963-5337 or 305-670-4357 to begin Medicaid and local program screenings. Website: <a href="https://allianceforaging.org" target="_blank">allianceforaging.org</a></p>
+      <div class="checkbox-group">
+        <label><input type="radio" name="call-helpline" value="not-started" checked> Not Started</label>
+        <label><input type="radio" name="call-helpline" value="contacted"> Contacted</label>
+        <label><input type="radio" name="call-helpline" value="process-started"> Process Started</label>
+        <label><input type="radio" name="call-helpline" value="waiting"> Waiting for Response</label>
+        <label><input type="radio" name="call-helpline" value="done"> Done</label>
+      </div>
+      
+      <div class="notes-section">
+        <div class="notes-heading">
+          <button class="add-note-btn">Add Note</button>
+          <button class="notes-toggle">Show Notes</button>
+        </div>
+        <div class="notes-content">
+          <div class="saved-notes"></div>
+          <textarea class="add-note-area" placeholder="Add a note about this task..."></textarea>
+          <div class="note-actions-bar">
+            <button class="save-note-btn">Save Note</button>
+            <button class="clear-note-btn">Clear</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="task" data-task-id="contact-agency">
+      <label>
+        <input type="checkbox" class="task-checkbox" data-task-id="contact-agency">
+        <div class="tooltip">
+          <span class="info-icon">ℹ️</span>
+          <div class="tooltip-content">
+            Call a certified agency that provides home health services and can schedule a nurse and aide after receiving a doctor's order.
+          </div>
+        </div>
+        <span class="task-title-text">Contact a Local Home Health Agency</span>
+      </label>
+      <p>Call American Home Health Providers at 305-820-3001 or search Medicare providers at <a href="https://www.medicare.gov/care-compare/" target="_blank">medicare.gov/care-compare</a></p>
+      <div class="find-agency-link" id="find-agency-link">
+        <span class="map-icon">🗺️</span>
+        Find agencies near you on map
+      </div>
+      <div class="checkbox-group">
+        <label><input type="radio" name="contact-agency" value="not-started" checked> Not Started</label>
+        <label><input type="radio" name="contact-agency" value="contacted"> Contacted</label>
+        <label><input type="radio" name="contact-agency" value="process-started"> Process Started</label>
+        <label><input type="radio" name="contact-agency" value="waiting"> Waiting for Response</label>
+        <label><input type="radio" name="contact-agency" value="done"> Done</label>
+      </div>
+      
+      <div class="notes-section">
+        <div class="notes-heading">
+          <button class="add-note-btn">Add Note</button>
+          <button class="notes-toggle">Show Notes</button>
+        </div>
+        <div class="notes-content">
+          <div class="saved-notes"></div>
+          <textarea class="add-note-area" placeholder="Add a note about this task..."></textarea>
+          <div class="note-actions-bar">
+            <button class="save-note-btn">Save Note</button>
+            <button class="clear-note-btn">Clear</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="task" data-task-id="request-respite">
+      <label>
+        <input type="checkbox" class="task-checkbox" data-task-id="request-respite">
+        <div class="tooltip">
+          <span class="info-icon">ℹ️</span>
+          <div class="tooltip-content">
+            Ask about programs that provide short-term relief for the current caregiver, especially if they are medically unable to continue care.
+          </div>
+        </div>
+        <span class="task-title-text">Request Emergency Respite for the Caregiver</span>
+      </label>
+      <p>Call 1-800-963-5337 or dial 2-1-1 to ask about emergency respite or volunteer support.</p>
+      <div class="checkbox-group">
+        <label><input type="radio" name="request-respite" value="not-started" checked> Not Started</label>
+        <label><input type="radio" name="request-respite" value="contacted"> Contacted</label>
+        <label><input type="radio" name="request-respite" value="process-started"> Process Started</label>
+        <label><input type="radio" name="request-respite" value="waiting"> Waiting for Response</label>
+        <label><input type="radio" name="request-respite" value="done"> Done</label>
+      </div>
+      
+      <div class="notes-section">
+        <div class="notes-heading">
+          <button class="add-note-btn">Add Note</button>
+          <button class="notes-toggle">Show Notes</button>
+        </div>
+        <div class="notes-content">
+          <div class="saved-notes"></div>
+          <textarea class="add-note-area" placeholder="Add a note about this task..."></textarea>
+          <div class="note-actions-bar">
+            <button class="save-note-btn">Save Note</button>
+            <button class="clear-note-btn">Clear</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="tab-content" id="short-term">
+    <h2 class="tab-title">Short-Term Actions</h2>
+    <div class="task" data-task-id="confirm-plan">
+      <label>
+        <input type="checkbox" class="task-checkbox" data-task-id="confirm-plan">
+        <div class="tooltip">
+          <span class="info-icon">ℹ️</span>
+          <div class="tooltip-content">
+            Ensure the agency has assigned a home health aide and that a visit schedule is in place based on the doctor's care plan.
+          </div>
+        </div>
+        <span class="task-title-text">Confirm Home Health Aide Schedule and Care Plan</span>
+      </label>
+      <div class="checkbox-group">
+        <label><input type="radio" name="confirm-plan" value="not-started" checked> Not Started</label>
+        <label><input type="radio" name="confirm-plan" value="contacted"> Contacted</label>
+        <label><input type="radio" name="confirm-plan" value="process-started"> Process Started</label>
+        <label><input type="radio" name="confirm-plan" value="waiting"> Waiting for Response</label>
+        <label><input type="radio" name="confirm-plan" value="done"> Done</label>
+      </div>
+      
+      <div class="notes-section">
+        <div class="notes-heading">
+          <button class="add-note-btn">Add Note</button>
+          <button class="notes-toggle">Show Notes</button>
+        </div>
+        <div class="notes-content">
+          <div class="saved-notes"></div>
+          <textarea class="add-note-area" placeholder="Add a note about this task..."></textarea>
+          <div class="note-actions-bar">
+            <button class="save-note-btn">Save Note</button>
+            <button class="clear-note-btn">Clear</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="task" data-task-id="apply-medicaid">
+      <label>
+        <input type="checkbox" class="task-checkbox" data-task-id="apply-medicaid">
+        <div class="tooltip">
+          <span class="info-icon">ℹ️</span>
+          <div class="tooltip-content">
+            Begin the assessment and application process for Medicaid-funded long-term care, which includes regular in-home aide visits.
+          </div>
+        </div>
+        <span class="task-title-text">Apply for Florida Medicaid Long-Term Care Services</span>
+      </label>
+      <p>Call 305-670-4357 to schedule assessment. Medicaid Info: <a href="https://elderaffairs.org" target="_blank">elderaffairs.org</a></p>
+      <div class="checkbox-group">
+        <label><input type="radio" name="apply-medicaid" value="not-started" checked> Not Started</label>
+        <label><input type="radio" name="apply-medicaid" value="contacted"> Contacted</label>
+        <label><input type="radio" name="apply-medicaid" value="process-started"> Process Started</label>
+        <label><input type="radio" name="apply-medicaid" value="waiting"> Waiting for Response</label>
+        <label><input type="radio" name="apply-medicaid" value="done"> Done</label>
+      </div>
+      
+      <div class="notes-section">
+        <div class="notes-heading">
+          <button class="add-note-btn">Add Note</button>
+          <button class="notes-toggle">Show Notes</button>
+        </div>
+        <div class="notes-content">
+          <div class="saved-notes"></div>
+          <textarea class="add-note-area" placeholder="Add a note about this task..."></textarea>
+          <div class="note-actions-bar">
+            <button class="save-note-btn">Save Note</button>
+            <button class="clear-note-btn">Clear</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="task" data-task-id="enroll-community">
+      <label>
+        <input type="checkbox" class="task-checkbox" data-task-id="enroll-community">
+        <div class="tooltip">
+          <span class="info-icon">ℹ️</span>
+          <div class="tooltip-content">
+            These Florida programs can offer in-home help or caregiver support while waiting for Medicaid waiver approval.
+          </div>
+        </div>
+        <span class="task-title-text">Enroll in Community Care Programs (CCE/HCE)</span>
+      </label>
+      <div class="checkbox-group">
+        <label><input type="radio" name="enroll-community" value="not-started" checked> Not Started</label>
+        <label><input type="radio" name="enroll-community" value="contacted"> Contacted</label>
+        <label><input type="radio" name="enroll-community" value="process-started"> Process Started</label>
+        <label><input type="radio" name="enroll-community" value="waiting"> Waiting for Response</label>
+        <label><input type="radio" name="enroll-community" value="done"> Done</label>
+      </div>
+      
+      <div class="notes-section">
+        <div class="notes-heading">
+          <button class="add-note-btn">Add Note</button>
+          <button class="notes-toggle">Show Notes</button>
+        </div>
+        <div class="notes-content">
+          <div class="saved-notes"></div>
+          <textarea class="add-note-area" placeholder="Add a note about this task..."></textarea>
+          <div class="note-actions-bar">
+            <button class="save-note-btn">Save Note</button>
+            <button class="clear-note-btn">Clear</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="task" data-task-id="contact-pace">
+      <label>
+        <input type="checkbox" class="task-checkbox" data-task-id="contact-pace">
+        <div class="tooltip">
+          <span class="info-icon">ℹ️</span>
+          <div class="tooltip-content">
+            Call to see if she qualifies for PACE, a Medicare/Medicaid program that provides complete medical and home care without the waitlist.
+          </div>
+        </div>
+        <span class="task-title-text">Contact PACE Center in Hialeah</span>
+      </label>
+      <div class="checkbox-group">
+        <label><input type="radio" name="contact-pace" value="not-started" checked> Not Started</label>
+        <label><input type="radio" name="contact-pace" value="contacted"> Contacted</label>
+        <label><input type="radio" name="contact-pace" value="process-started"> Process Started</label>
+        <label><input type="radio" name="contact-pace" value="waiting"> Waiting for Response</label>
+        <label><input type="radio" name="contact-pace" value="done"> Done</label>
+      </div>
+      
+      <div class="notes-section">
+        <div class="notes-heading">
+          <button class="add-note-btn">Add Note</button>
+          <button class="notes-toggle">Show Notes</button>
+        </div>
+        <div class="notes-content">
+          <div class="saved-notes"></div>
+          <textarea class="add-note-area" placeholder="Add a note about this task..."></textarea>
+          <div class="note-actions-bar">
+            <button class="save-note-btn">Save Note</button>
+            <button class="clear-note-btn">Clear</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="tab-content" id="long-term">
+    <h2 class="tab-title">Long-Term Follow-up</h2>
+    <div class="task" data-task-id="monitor-care">
+      <label>
+        <input type="checkbox" class="task-checkbox" data-task-id="monitor-care">
+        <div class="tooltip">
+          <span class="info-icon">ℹ️</span>
+          <div class="tooltip-content">
+            Check that the aide is showing up and meeting her needs, and report any issues or changes in her condition to the agency or doctor.
+          </div>
+        </div>
+        <span class="task-title-text">Monitor the Aide's Care and Adjust Plan if Needed</span>
+      </label>
+      <div class="checkbox-group">
+        <label><input type="radio" name="monitor-care" value="not-started" checked> Not Started</label>
+        <label><input type="radio" name="monitor-care" value="contacted"> In Progress</label>
+        <label><input type="radio" name="monitor-care" value="process-started"> Issues Identified</label>
+        <label><input type="radio" name="monitor-care" value="waiting"> Addressed Issues</label>
+        <label><input type="radio" name="monitor-care" value="done"> Satisfactory</label>
+      </div>
+      
+      <div class="notes-section">
+        <div class="notes-heading">
+          <button class="add-note-btn">Add Note</button>
+          <button class="notes-toggle">Show Notes</button>
+        </div>
+        <div class="notes-content">
+          <div class="saved-notes"></div>
+          <textarea class="add-note-area" placeholder="Add a note about this task..."></textarea>
+          <div class="note-actions-bar">
+            <button class="save-note-btn">Save Note</button>
+            <button class="clear-note-btn">Clear</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="task" data-task-id="follow-medicaid">
+      <label>
+        <input type="checkbox" class="task-checkbox" data-task-id="follow-medicaid">
+        <div class="tooltip">
+          <span class="info-icon">ℹ️</span>
+          <div class="tooltip-content">
+            Follow up regularly with the ADRC to check her spot on the Medicaid waitlist and update them if her needs change.
+          </div>
+        </div>
+        <span class="task-title-text">Track Medicaid LTC Application and Priority Score</span>
+      </label>
+      <div class="checkbox-group">
+        <label><input type="radio" name="follow-medicaid" value="not-started" checked> Not Started</label>
+        <label><input type="radio" name="follow-medicaid" value="contacted"> Contacted</label>
+        <label><input type="radio" name="follow-medicaid" value="process-started"> Process Started</label>
+        <label><input type="radio" name="follow-medicaid" value="waiting"> Waiting for Response</label>
+        <label><input type="radio" name="follow-medicaid" value="done"> Done</label>
+      </div>
+      
+      <div class="notes-section">
+        <div class="notes-heading">
+          <button class="add-note-btn">Add Note</button>
+          <button class="notes-toggle">Show Notes</button>
+        </div>
+        <div class="notes-content">
+          <div class="saved-notes"></div>
+          <textarea class="add-note-area" placeholder="Add a note about this task..."></textarea>
+          <div class="note-actions-bar">
+            <button class="save-note-btn">Save Note</button>
+            <button class="clear-note-btn">Clear</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="task" data-task-id="schedule-assessment">
+      <label>
+        <input type="checkbox" class="task-checkbox" data-task-id="schedule-assessment">
+        <div class="tooltip">
+          <span class="info-icon">ℹ️</span>
+          <div class="tooltip-content">
+            Be sure to renew Medicaid and keep Medicare information up to date so there's no interruption in home care coverage.
+          </div>
+        </div>
+        <span class="task-title-text">Maintain Medicaid/Medicare Annual Eligibility</span>
+      </label>
+      <div class="checkbox-group">
+        <label><input type="radio" name="schedule-assessment" value="not-started" checked> Not Started</label>
+        <label><input type="radio" name="schedule-assessment" value="contacted"> Contacted</label>
+        <label><input type="radio" name="schedule-assessment" value="process-started"> Process Started</label>
+        <label><input type="radio" name="schedule-assessment" value="waiting"> Waiting for Response</label>
+        <label><input type="radio" name="schedule-assessment" value="done"> Done</label>
+      </div>
+      
+      <div class="notes-section">
+        <div class="notes-heading">
+          <button class="add-note-btn">Add Note</button>
+          <button class="notes-toggle">Show Notes</button>
+        </div>
+        <div class="notes-content">
+          <div class="saved-notes"></div>
+          <textarea class="add-note-area" placeholder="Add a note about this task..."></textarea>
+          <div class="note-actions-bar">
+            <button class="save-note-btn">Save Note</button>
+            <button class="clear-note-btn">Clear</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="task" data-task-id="explore-resources">
+      <label>
+        <input type="checkbox" class="task-checkbox" data-task-id="explore-resources">
+        <div class="tooltip">
+          <span class="info-icon">ℹ️</span>
+          <div class="tooltip-content">
+            Plan ahead in case the regular aide is unavailable; identify family, friends, or programs that can step in temporarily.
+          </div>
+        </div>
+        <span class="task-title-text">Create a Backup Care and Respite Plan</span>
+      </label>
+      <div class="checkbox-group">
+        <label><input type="radio" name="explore-resources" value="not-started" checked> Not Started</label>
+        <label><input type="radio" name="explore-resources" value="contacted"> Researching</label>
+        <label><input type="radio" name="explore-resources" value="process-started"> Identified Options</label>
+        <label><input type="radio" name="explore-resources" value="waiting"> Applied/Enrolled</label>
+        <label><input type="radio" name="explore-resources" value="done"> Utilizing Services</label>
+      </div>
+      
+      <div class="notes-section">
+        <div class="notes-heading">
+          <button class="add-note-btn">Add Note</button>
+          <button class="notes-toggle">Show Notes</button>
+        </div>
+        <div class="notes-content">
+          <div class="saved-notes"></div>
+          <textarea class="add-note-area" placeholder="Add a note about this task..."></textarea>
+          <div class="note-actions-bar">
+            <button class="save-note-btn">Save Note</button>
+            <button class="clear-note-btn">Clear</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="scripts/index.js"></script>
+    // Supabase configuration
+    const supabaseUrl = 'https://gqivebwnxivqzzdsyrlm.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxaXZlYndueGl2cXp6ZHN5cmxtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUwODk3NDAsImV4cCI6MjA2MDY2NTc0MH0.hxvSDFeETYrcroul1FalpDQRQrRJ3yVk0en20IXgUI4';
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+    // Check authentication status
+    async function checkAuth() {
+      // If test account exists in local storage, consider authenticated
+      const testUser = JSON.parse(localStorage.getItem('healthAideTestUser'));
+      if (testUser?.isTestAccount) {
+        return true;
+      }
+      
+      // Otherwise check Supabase authentication
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        window.location.href = 'login.html';
+        return false;
+      }
+      
+      // Update UI with user info
+      const userInfo = document.getElementById('userInfo');
+      if (userInfo) {
+        // Only update if not already set by test user code
+        if (!document.getElementById('testBadge').style.display || 
+            document.getElementById('testBadge').style.display === 'none') {
+          document.getElementById('userName').textContent = `Welcome, ${user.user_metadata?.full_name || user.email}`;
+        }
+      }
+      
+      return true;
+    }
+
+    // Logout function
+    async function logout() {
+      await supabase.auth.signOut();
+      window.location.href = 'login.html';
+    }
+
+    document.addEventListener('DOMContentLoaded', async function() {
+      // Check for test account login
+      const testUser = JSON.parse(localStorage.getItem('healthAideTestUser'));
+      if (testUser) {
+        document.getElementById('userName').textContent = `Welcome, ${testUser.name}!`;
+        document.getElementById('testBadge').style.display = 'inline-block';
+      }
+      
+      // Handle logout
+      document.getElementById('logoutBtn').addEventListener('click', () => {
+        localStorage.removeItem('healthAideTestUser');
+        window.location.href = 'login.html';
+      });
+      
+      // Check authentication first
+      const isAuthenticated = await checkAuth();
+      if (!isAuthenticated) return;
+      // Tab functionality
+      const tabs = document.querySelectorAll('.tab');
+      const tabContents = document.querySelectorAll('.tab-content');
+      
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          // Remove active class from all tabs and contents
+          tabs.forEach(t => t.classList.remove('active'));
+          tabContents.forEach(c => c.classList.remove('active'));
+          
+          // Add active class to clicked tab and corresponding content
+          tab.classList.add('active');
+          const tabId = tab.getAttribute('data-tab');
+          document.getElementById(tabId).classList.add('active');
+        });
+      });
+      
+      // Task tracking functionality
+      const tasks = document.querySelectorAll('.task');
+      
+      // Load saved task statuses from localStorage
+      function loadTaskStatuses() {
+        tasks.forEach(task => {
+          const taskId = task.getAttribute('data-task-id');
+          const savedStatusJson = localStorage.getItem(`task-${taskId}`);
+          const taskCheckbox = task.querySelector('.task-checkbox');
+          
+          if (savedStatusJson) {
+            try {
+              const statusData = JSON.parse(savedStatusJson);
+              const radioButton = task.querySelector(`input[value="${statusData.status}"]`);
+              if (radioButton) {
+                radioButton.checked = true;
+              }
+              
+              // Set checkbox state based on completion
+              if (taskCheckbox) {
+                taskCheckbox.checked = statusData.status === 'done';
+              }
+            } catch (e) {
+              // Handle legacy format (string only)
+              const radioButton = task.querySelector(`input[value="${savedStatusJson}"]`);
+              if (radioButton) {
+                radioButton.checked = true;
+                // Convert to new format
+                const statusData = {
+                  status: savedStatusJson,
+                  timestamp: new Date().toLocaleString(),
+                  updated: Date.now()
+                };
+                localStorage.setItem(`task-${taskId}`, JSON.stringify(statusData));
+              }
+              
+              // Set checkbox state based on completion
+              if (taskCheckbox) {
+                taskCheckbox.checked = savedStatusJson === 'done';
+              }
+            }
+          }
+          
+          // Load notes for this task
+          const savedNotesContainer = task.querySelector('.saved-notes');
+          if (savedNotesContainer) {
+            loadNotes(taskId, savedNotesContainer);
+          }
+        });
+        
+        updateDashboard();
+      }
+      
+      // Save task status to localStorage when changed
+      tasks.forEach(task => {
+        const taskId = task.getAttribute('data-task-id');
+        const radioButtons = task.querySelectorAll('input[type="radio"]');
+        const taskCheckbox = task.querySelector('.task-checkbox');
+        
+        radioButtons.forEach(radio => {
+          radio.addEventListener('change', () => {
+            if (radio.checked) {
+              // Save status with timestamp
+              const statusData = {
+                status: radio.value,
+                timestamp: new Date().toLocaleString(),
+                updated: Date.now()
+              };
+              localStorage.setItem(`task-${taskId}`, JSON.stringify(statusData));
+              
+              // Update checkbox state
+              if (taskCheckbox) {
+                taskCheckbox.checked = radio.value === 'done';
+              }
+              
+              updateDashboard();
+            }
+          });
+        });
+        
+        // Handle checkbox changes in list view
+        if (taskCheckbox) {
+          taskCheckbox.addEventListener('change', () => {
+            const statusData = {
+              status: taskCheckbox.checked ? 'done' : 'not-started',
+              timestamp: new Date().toLocaleString(),
+              updated: Date.now()
+            };
+            localStorage.setItem(`task-${taskId}`, JSON.stringify(statusData));
+            
+            // Update radio buttons to match checkbox
+            const targetRadio = task.querySelector(`input[value="${statusData.status}"]`);
+            if (targetRadio) {
+              targetRadio.checked = true;
+            }
+            
+            updateDashboard();
+          });
+        }
+      });
+      
+      // Update dashboard with current progress
+      function updateDashboard() {
+        let notStartedCount = 0;
+        let inProgressCount = 0;
+        let completedCount = 0;
+        let totalTasks = tasks.length;
+        
+        tasks.forEach(task => {
+          const taskId = task.getAttribute('data-task-id');
+          const savedStatusJson = localStorage.getItem(`task-${taskId}`);
+          let currentStatus = 'not-started';
+          
+          if (savedStatusJson) {
+            try {
+              const statusData = JSON.parse(savedStatusJson);
+              currentStatus = statusData.status;
+            } catch (e) {
+              // Handle legacy format
+              currentStatus = savedStatusJson;
+            }
+          }
+          
+          if (currentStatus === 'not-started') {
+            notStartedCount++;
+          } else if (currentStatus === 'done') {
+            completedCount++;
+          } else {
+            inProgressCount++;
+          }
+        });
+        
+        // Update status counts
+        document.getElementById('not-started-count').textContent = notStartedCount;
+        document.getElementById('in-progress-count').textContent = inProgressCount;
+        document.getElementById('completed-count').textContent = completedCount;
+        
+        // Progress bar removed
+      }
+      
+      // Notes functionality
+      
+      // Toggle notes visibility
+      const notesToggleButtons = document.querySelectorAll('.notes-toggle');
+      const addNoteButtons = document.querySelectorAll('.add-note-btn');
+      
+      notesToggleButtons.forEach(button => {
+        button.addEventListener('click', () => {
+          const notesContent = button.closest('.notes-section').querySelector('.notes-content');
+          notesContent.classList.toggle('active');
+          
+          // Change button text based on state
+          if (notesContent.classList.contains('active')) {
+            button.textContent = 'Hide Notes';
+          } else {
+            button.textContent = 'Show Notes';
+          }
+        });
+      });
+      
+      // Add note button functionality
+      addNoteButtons.forEach(button => {
+        button.addEventListener('click', () => {
+          const notesContent = button.closest('.notes-section').querySelector('.notes-content');
+          const toggleButton = button.closest('.notes-section').querySelector('.notes-toggle');
+          
+          // Show notes content if hidden
+          if (!notesContent.classList.contains('active')) {
+            notesContent.classList.add('active');
+            toggleButton.textContent = 'Hide Notes';
+          }
+          
+          // Focus on the textarea
+          const textarea = notesContent.querySelector('.add-note-area');
+          textarea.focus();
+        });
+      });
+      
+      // Save note functionality
+      const saveNoteButtons = document.querySelectorAll('.save-note-btn');
+      
+      saveNoteButtons.forEach(button => {
+        button.addEventListener('click', () => {
+          const notesSection = button.closest('.notes-section');
+          const task = button.closest('.task');
+          const taskId = task.getAttribute('data-task-id');
+          const noteTextarea = notesSection.querySelector('.add-note-area');
+          const noteText = noteTextarea.value.trim();
+          
+          if (noteText) {
+            // Create note object with timestamp
+            const note = {
+              id: Date.now(),  // Use timestamp as unique ID
+              text: noteText,
+              timestamp: new Date().toLocaleString()
+            };
+            
+            // Save note to localStorage
+            const savedNotes = JSON.parse(localStorage.getItem(`notes-${taskId}`) || '[]');
+            savedNotes.push(note);
+            localStorage.setItem(`notes-${taskId}`, JSON.stringify(savedNotes));
+            
+            // Clear textarea
+            noteTextarea.value = '';
+            
+            // Refresh notes display
+            const savedNotesContainer = notesSection.querySelector('.saved-notes');
+            loadNotes(taskId, savedNotesContainer);
+          }
+        });
+      });
+      
+      // Clear note textarea
+      const clearNoteButtons = document.querySelectorAll('.clear-note-btn');
+      
+      clearNoteButtons.forEach(button => {
+        button.addEventListener('click', () => {
+          const noteTextarea = button.closest('.notes-section').querySelector('.add-note-area');
+          noteTextarea.value = '';
+        });
+      });
+      
+      // Load notes from localStorage
+      function loadNotes(taskId, container) {
+        const savedNotes = JSON.parse(localStorage.getItem(`notes-${taskId}`) || '[]');
+        
+        // Clear container
+        container.innerHTML = '';
+        
+        if (savedNotes.length === 0) {
+          container.innerHTML = '<p>No notes yet.</p>';
+          return;
+        }
+        
+        // Sort notes by timestamp (newest first)
+        savedNotes.sort((a, b) => b.id - a.id);
+        
+        // Add notes to container
+        savedNotes.forEach(note => {
+          const noteElement = document.createElement('div');
+          noteElement.className = 'note-item';
+          noteElement.innerHTML = `
+            <div class="note-timestamp">${note.timestamp}</div>
+            <div class="note-text">${note.text}</div>
+            <div class="note-actions">
+              <button class="note-delete" data-note-id="${note.id}">Delete</button>
+            </div>
+          `;
+          
+          container.appendChild(noteElement);
+          
+          // Add delete functionality
+          const deleteButton = noteElement.querySelector('.note-delete');
+          deleteButton.addEventListener('click', () => {
+            deleteNote(taskId, note.id, container);
+          });
+        });
+      }
+      
+      // Delete note
+      function deleteNote(taskId, noteId, container) {
+        if (confirm('Are you sure you want to delete this note?')) {
+          const savedNotes = JSON.parse(localStorage.getItem(`notes-${taskId}`) || '[]');
+          const updatedNotes = savedNotes.filter(note => note.id !== noteId);
+          
+          localStorage.setItem(`notes-${taskId}`, JSON.stringify(updatedNotes));
+          
+          // Refresh notes display
+          loadNotes(taskId, container);
+        }
+      }
+      
+      // Initialize
+      loadTaskStatuses();
+      
+      // Tooltip functionality for mobile devices
+      const tooltips = document.querySelectorAll('.tooltip');
+      
+      tooltips.forEach(tooltip => {
+        const infoIcon = tooltip.querySelector('.info-icon');
+        
+        infoIcon.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          // Close all other tooltips
+          tooltips.forEach(otherTooltip => {
+            if (otherTooltip !== tooltip) {
+              otherTooltip.classList.remove('active');
+            }
+          });
+          
+          // Toggle current tooltip
+          tooltip.classList.toggle('active');
+        });
+        
+        // Close tooltip when clicking outside
+        document.addEventListener('click', (e) => {
+          if (!tooltip.contains(e.target)) {
+            tooltip.classList.remove('active');
+          }
+        });
+      });
+      
+      // Add clear data functionality
+      const clearButton = document.createElement('button');
+      clearButton.textContent = 'Reset All Progress';
+      clearButton.style.marginTop = '20px';
+      clearButton.style.padding = '8px 16px';
+      clearButton.style.backgroundColor = '#B71C1C';
+      clearButton.style.color = 'white';
+      clearButton.style.border = 'none';
+      clearButton.style.borderRadius = '4px';
+      clearButton.style.cursor = 'pointer';
+      
+      clearButton.addEventListener('click', () => {
+        if (confirm('Are you sure you want to reset all progress? This cannot be undone.')) {
+          tasks.forEach(task => {
+            const taskId = task.getAttribute('data-task-id');
+            localStorage.removeItem(`task-${taskId}`);
+            
+            // Reset all radio buttons to "Not Started"
+            const notStartedRadio = task.querySelector('input[value="not-started"]');
+            if (notStartedRadio) {
+              notStartedRadio.checked = true;
+            }
+          });
+          
+          updateDashboard();
+        }
+      });
+      
+      document.body.appendChild(clearButton);
+      
+      // Add clear all notes functionality
+      const clearNotesButton = document.createElement('button');
+      clearNotesButton.textContent = 'Clear All Notes';
+      clearNotesButton.style.marginTop = '10px';
+      clearNotesButton.style.marginLeft = '10px';
+      clearNotesButton.style.padding = '8px 16px';
+      clearNotesButton.style.backgroundColor = '#424242';
+      clearNotesButton.style.color = 'white';
+      clearNotesButton.style.border = 'none';
+      clearNotesButton.style.borderRadius = '4px';
+      clearNotesButton.style.cursor = 'pointer';
+      
+      clearNotesButton.addEventListener('click', () => {
+        if (confirm('Are you sure you want to delete all notes? This cannot be undone.')) {
+          tasks.forEach(task => {
+            const taskId = task.getAttribute('data-task-id');
+            localStorage.removeItem(`notes-${taskId}`);
+            
+            // Clear notes display
+            const savedNotesContainer = task.querySelector('.saved-notes');
+            loadNotes(taskId, savedNotesContainer);
+          });
+        }
+      });
+      
+      document.body.appendChild(clearNotesButton);
+      
+      // Task Filter Modal Functionality
+      const modal = document.getElementById('task-filter-modal');
+      const modalClose = document.querySelector('.modal-close');
+      const statusItems = document.querySelectorAll('.status-item');
+      const filteredTasksList = document.getElementById('filtered-tasks-list');
+      const modalStatusType = document.getElementById('modal-status-type');
+      
+      // Close modal when clicking X
+      modalClose.addEventListener('click', () => {
+        modal.classList.remove('active');
+      });
+      
+      // Close modal when clicking outside of it
+      window.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.classList.remove('active');
+        }
+      });
+      
+      // Status item click handlers
+      statusItems.forEach(item => {
+        item.addEventListener('click', () => {
+          const statusType = item.getAttribute('data-status');
+          showFilteredTasks(statusType);
+        });
+      });
+      
+      // Show tasks filtered by status
+      function showFilteredTasks(statusType) {
+        // Clear previous content
+        filteredTasksList.innerHTML = '';
+        
+        // Set modal title based on status type
+        let statusTitle = '';
+        switch(statusType) {
+          case 'not-started':
+            statusTitle = 'Not Started';
+            break;
+          case 'in-progress':
+            statusTitle = 'In Progress';
+            break;
+          case 'completed':
+            statusTitle = 'Completed';
+            break;
+        }
+        modalStatusType.textContent = statusTitle;
+        
+        // Get all tasks with the selected status
+        const filteredTasks = [];
+        
+        tasks.forEach(task => {
+          const taskId = task.getAttribute('data-task-id');
+          const taskTitle = task.querySelector('.task-title-text').textContent;
+          const tabContent = task.closest('.tab-content');
+          const tabId = tabContent.id;
+          
+          let categoryName = '';
+          // Get category name from tab
+          document.querySelectorAll('.tab').forEach(tab => {
+            if (tab.getAttribute('data-tab') === tabId) {
+              categoryName = tab.textContent;
+            }
+          });
+          
+          const savedStatusJson = localStorage.getItem(`task-${taskId}`);
+          
+          if (savedStatusJson) {
+            try {
+              const statusData = JSON.parse(savedStatusJson);
+              const currentStatus = statusData.status;
+              
+              // Check if task matches the selected status filter
+              if ((statusType === 'not-started' && currentStatus === 'not-started') ||
+                  (statusType === 'completed' && currentStatus === 'done') ||
+                  (statusType === 'in-progress' && currentStatus !== 'not-started' && currentStatus !== 'done')) {
+                
+                filteredTasks.push({
+                  id: taskId,
+                  title: taskTitle,
+                  category: categoryName,
+                  timestamp: statusData.timestamp,
+                  status: currentStatus,
+                  updated: statusData.updated || Date.now()
+                });
+              }
+            } catch (e) {
+              // Handle legacy format
+              const currentStatus = savedStatusJson;
+              
+              if ((statusType === 'not-started' && currentStatus === 'not-started') ||
+                  (statusType === 'completed' && currentStatus === 'done') ||
+                  (statusType === 'in-progress' && currentStatus !== 'not-started' && currentStatus !== 'done')) {
+                
+                filteredTasks.push({
+                  id: taskId,
+                  title: taskTitle,
+                  category: categoryName,
+                  timestamp: 'Unknown date',
+                  status: currentStatus,
+                  updated: Date.now()
+                });
+              }
+            }
+          } else if (statusType === 'not-started') {
+            // Include tasks with no saved status in 'Not Started'
+            filteredTasks.push({
+              id: taskId,
+              title: taskTitle,
+              category: categoryName,
+              timestamp: 'Not started yet',
+              status: 'not-started',
+              updated: Date.now()
+            });
+          }
+        });
+        
+        // Sort tasks by update date (newest first)
+        filteredTasks.sort((a, b) => b.updated - a.updated);
+        
+        // Display filtered tasks
+        if (filteredTasks.length === 0) {
+          filteredTasksList.innerHTML = '<p>No tasks with this status.</p>';
+        } else {
+          filteredTasks.forEach(task => {
+            const taskElement = document.createElement('div');
+            taskElement.className = 'task-list-item';
+            taskElement.innerHTML = `
+              <div class="task-category">${task.category}</div>
+              <div class="task-title">${task.title}</div>
+              <div class="task-date">Last updated: ${task.timestamp}</div>
+            `;
+            filteredTasksList.appendChild(taskElement);
+          });
+        }
+        
+        // Show modal
+        modal.classList.add('active');
+      }
+      
+      // Find Agency link functionality
+      const findAgencyLink = document.getElementById('find-agency-link');
+      
+      findAgencyLink.addEventListener('click', () => {
+        document.getElementById('map-modal').classList.add('active');
+      });
+      
+      // View Toggle Functionality
+      const viewToggleBtn = document.getElementById('view-toggle');
+      const mainContainer = document.body;
+      const viewToggleText = viewToggleBtn.querySelector('.view-toggle-text');
+      
+      // Load view preference from localStorage
+      const currentView = localStorage.getItem('view-preference') || 'tabbed';
+      if (currentView === 'list') {
+        mainContainer.classList.add('list-view');
+        viewToggleText.textContent = 'Tabbed View';
+      }
+      
+      viewToggleBtn.addEventListener('click', () => {
+        mainContainer.classList.toggle('list-view');
+        
+        if (mainContainer.classList.contains('list-view')) {
+          viewToggleText.textContent = 'Tabbed View';
+          localStorage.setItem('view-preference', 'list');
+        } else {
+          viewToggleText.textContent = 'Simple List';
+          localStorage.setItem('view-preference', 'tabbed');
+          
+          // Reset tab selection when switching back to tabbed view
+          tabs.forEach(t => t.classList.remove('active'));
+          tabContents.forEach(c => c.classList.remove('active'));
+          tabs[0].classList.add('active');
+          tabContents[0].classList.add('active');
+        }
+      });
+      
+      // Map Modal Functionality
+      const mapModal = document.getElementById('map-modal');
+      const mapModalClose = document.querySelector('.map-modal-close');
+      const zipcodeInput = document.getElementById('zipcode-input');
+      const searchMapBtn = document.getElementById('search-map-btn');
+      const googleMap = document.getElementById('google-map');
+      
+      // Close map modal when clicking X
+      mapModalClose.addEventListener('click', () => {
+        mapModal.classList.remove('active');
+      });
+      
+      // Close map modal when clicking outside
+      window.addEventListener('click', (e) => {
+        if (e.target === mapModal) {
+          mapModal.classList.remove('active');
+        }
+      });
+      
+      // Update map on search button click
+      searchMapBtn.addEventListener('click', () => {
+        const location = zipcodeInput.value.trim();
+        if (location) {
+          const mapSrc = `https://www.google.com/maps/embed/v1/search?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=home+health+agencies+near+${encodeURIComponent(location)}&zoom=12`;
+          googleMap.src = mapSrc;
+        }
+      });
+      
+      // Update map on Enter key press
+      zipcodeInput.addEventListener('keyup', (e) => {
+        if (e.key === 'Enter') {
+          searchMapBtn.click();
+        }
+      });
+    });
+  
+</body>
+</html>
